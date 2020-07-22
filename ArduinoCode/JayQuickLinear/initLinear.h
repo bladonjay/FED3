@@ -1,4 +1,4 @@
-#include <SPI.h>
+i#include <SPI.h>
 #include <SD.h>
 #include "SdFat.h"
 #include <Wire.h>
@@ -15,6 +15,7 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Declare the RTC here
+RTC_PCF8523 rtc;
 
 // Declare our functions
 void RatSplashScreen();
