@@ -1,6 +1,6 @@
-i#include <SPI.h>
+#include <SPI.h>
 #include <SD.h>
-#include "SdFat.h"
+//#include "SdFat.h"
 #include <Wire.h>
 //#include <RTCZero.h>
 #include "RTClib.h"
@@ -13,9 +13,8 @@ i#include <SPI.h>
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// Declare the RTC here
 RTC_PCF8523 rtc;
+// Declare the RTC here
 
 // Declare our functions
 void RatSplashScreen();
@@ -28,11 +27,15 @@ void RunWmazeLeft();
 void RunWmazeRight();
 void RunSocial();
 
-
+file logfile;
 
 
 
 //
+bool upvalL;
+bool upvalR;
+bool upvalC;
+
 const int rightBeam = 11;
 const int leftBeam = 12;
 const int centerBeam = 6;
@@ -51,3 +54,11 @@ int Lrew = 0;
 int Rrew = 0;
 int taskMode = 1;
 int iterator = 0;
+int saveOpt = 2;
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+char fileName[8];
+char mydateHMS[8];
+
+long starttime = 0;
+long thistime = 0;

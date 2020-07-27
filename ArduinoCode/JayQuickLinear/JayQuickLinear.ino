@@ -1,5 +1,5 @@
 // include the library first
-# include initLinear.h
+# include "initLinear.h"
 
 #if defined(ARDUINO_SAMD_ZERO) && defined(SERIAL_PORT_USBVIRTUAL)
 // Required for Serial on Zero based boards
@@ -33,6 +33,12 @@ void setup() {
       Serial.println(F("SSD1306 allocation failed"));
     }
   }
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    abort();
+  }
   iterator = 0;
   Serial.println("SSD1306 initialized");
   // initialize sd card at pin 10
@@ -55,154 +61,81 @@ void setup() {
   display.setTextColor(SSD1306_WHITE); // Draw white text
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
 
-  // RunMouse();
-  // delay(2000);
+  RunMouse();
+  delay(1000);
   // tone (BUZZER, 500, 500);
+  // grab the date from our rtc.
+  DateTime now = rtc.now();
   optScreen();
+  saveScreen();
+  makeFile();
+  starttime = millis();
   startScreen();
 }
 
 void loop() {
-
+  // update counters
   RunLinTrack();
-
+  // and update the timer
+  displayElapsedTime();
 }
-
-
-// imbed startup screen into a function
-void startScreen() {
-
-  display.clearDisplay();
-  display.setCursor(30, 0);     // Start at top-left corner
-
-  // create the home screen
-  display.println(F("Linear Track"));
-  display.fillRect(116, 4, 8, 6, SSD1306_WHITE);
-  display.fillRect(124, 6, 4, 2, SSD1306_WHITE);
-
-  display.fillCircle(123, 3, 2, SSD1306_BLACK); // centerx centery rad, color
-  display.drawCircle(123, 3, 2, SSD1306_WHITE);
-
-  display.fillCircle(116, 3, 2, SSD1306_BLACK); // centerx centery rad, color
-  display.drawCircle(116, 3, 2, SSD1306_WHITE);
-
-  display.drawCircle(31, 12, 3, SSD1306_WHITE);
-  display.drawCircle(95, 12, 3, SSD1306_WHITE);
-  display.drawFastHLine(34, 12, 58, SSD1306_WHITE);
-
-  display.setCursor(16, 16);
-  display.println(F("Lrew:"));
-  display.setCursor(72, 16);
-  display.println(F("Rrew:"));
-  display.setCursor(0, 24);
-  display.println(F("T=12:12"));
-  display.setCursor(54, 24);
-  display.println(F("File:test001"));
-
-
-  display.display();
-}
-
 
 void RunLinTrack() {
+  upvalL = digitalRead(leftBeam);
+  upvalR = digitalRead(rightBeam);
+  // if both are broken, lets break tot he next iteration, because this is basically a pause
+  if (upvalL == 0 && upvalR == 0) {
+    // this might be a good place to close the file and kill the loop
+    //display.setCursor(64,24);
+    //display.println(F("Stop Rec"));
+    return;
+  }
   // check left beam, if its unbroken, turn off pin and open circle
-  if (digitalRead(leftBeam) == HIGH) {
+  if (upvalL == 1) {
     digitalWrite(ledPin, LOW);
-    display.fillCircle(31, 12, 3, SSD1306_BLACK); // centerx centery rad, color
+    display.fillCircle(32, 12, 2, SSD1306_BLACK); // centerx centery rad, color
   }
   else {
     // if left beam broken, and last well wasnt this one, feed, reset
     if (lastWell != 1) {
       ++Lrew;
       // update display settings
-      display.fillRect(44, 16, 18, 8, SSD1306_BLACK);
-      display.setCursor(44, 16);
+      display.fillRect(34, 16, 18, 8, SSD1306_BLACK);
+      display.setCursor(36, 16);
       String Lstr = String(Lrew);
       display.println(Lstr);
     }
     lastWell = 1;
     digitalWrite(ledPin, HIGH);
-    display.fillCircle(31, 12, 3, SSD1306_WHITE);
+    display.fillCircle(32, 12, 2, SSD1306_WHITE);
   }
 
-  if (digitalRead(rightBeam) == HIGH) {
+  // if right beam broken
+  if (upvalR == 1) {
     digitalWrite(ledPin, LOW);
-    display.fillCircle(95, 12, 3, SSD1306_BLACK); // centerx centery rad, color
+    display.fillCircle(94, 12, 2, SSD1306_BLACK); // centerx centery rad, color
   }
   else {
     if (lastWell != 2) {
       ++Rrew;
-      display.fillRect(100, 16, 18, 8, SSD1306_BLACK);
-      display.setCursor(100, 16);
+      display.fillRect(93, 16, 18, 8, SSD1306_BLACK);
+      display.setCursor(94, 16);
       String Rstr = String(Rrew);
       display.println(Rstr);
     }
     lastWell = 2;
     digitalWrite(ledPin, HIGH);
-    display.fillCircle(95, 12, 3, SSD1306_WHITE);
+    display.fillCircle(94, 12, 2, SSD1306_WHITE);
   }
-  display.drawCircle(95, 12, 3, SSD1306_WHITE);
-  display.drawCircle(31, 12, 3, SSD1306_WHITE);
+  // draw outlines
+  display.drawCircle(94, 12, 2, SSD1306_WHITE);
+  display.drawCircle(32, 12, 2, SSD1306_WHITE);
   display.display();
 }
 
 
-void RunMouse() {
-  display.clearDisplay();
-  for (int i = -50; i < 200; i += 10) {
-    display.setCursor(0, 16);
-    //Draw animated mouse...
-    display.fillRoundRect (i + 25, 17, 14, 10, 4, SSD1306_WHITE);  //head
-    display.fillRoundRect (i + 35, 19, 2, 2, 1, SSD1306_WHITE);    //eye
-    //movement of the mouse
-    if ((i / 10) % 2 == 0) {
-      display.fillRoundRect (i, 19, 32, 14, 10, SSD1306_WHITE);      //body
-      display.drawFastHLine(i - 8, 20, 18, SSD1306_WHITE);        //tail
-      display.drawFastHLine(i - 8, 21, 18, SSD1306_WHITE);
-      display.drawFastHLine(i - 14, 19, 8, SSD1306_WHITE);
-      display.drawFastHLine(i - 14, 20, 8, SSD1306_WHITE);
 
-      display.fillRoundRect (i + 22, 30, 8, 4, 3, SSD1306_WHITE);  //front foot
-      display.fillRoundRect (i , 30, 8, 6, 3, SSD1306_INVERSE); //back foot
-    }
-    else {
-      display.fillRoundRect (i + 2, 18, 30, 12, 10, SSD1306_WHITE);    //body
-      display.drawFastHLine(i - 6, 26, 18, SSD1306_WHITE);        //tail
-      display.drawFastHLine(i - 6, 25, 18, SSD1306_WHITE);
-      display.drawFastHLine(i - 12, 27, 8, SSD1306_WHITE);
-      display.drawFastHLine(i - 12, 26, 8, SSD1306_WHITE);
 
-      display.fillRoundRect (i + 15, 30, 8, 4, 3, SSD1306_WHITE);  //foot
-      display.fillRoundRect (i + 8, 30, 8, 6, 3, SSD1306_INVERSE); //back foot
-    }
-    display.fillRoundRect (i + 22, 15, 8, 5, 3, SSD1306_INVERSE);    //ear
-    display.display();
-    delay (200);
-    display.clearDisplay();
-  }
-
-  display.fillRoundRect (40, 17, 14, 10, 6, SSD1306_WHITE);  //head
-  display.fillRoundRect (17, 18, 30, 12, 10, SSD1306_WHITE);    //body
-  display.drawFastHLine(9, 26, 18, SSD1306_WHITE);        //tail
-  display.drawFastHLine(9, 25, 18, SSD1306_WHITE);
-  display.drawFastHLine(3, 27, 8, SSD1306_WHITE);
-  display.drawFastHLine(3, 26, 8, SSD1306_WHITE);
-
-  display.fillRoundRect (30, 30, 8, 4, 3, SSD1306_INVERSE);  //foot
-  display.fillRoundRect (23, 30, 8, 6, 3, SSD1306_INVERSE);
-
-  display.fillRoundRect (37, 15, 8, 5, 3, SSD1306_INVERSE);    //ear
-  display.fillRoundRect (50, 19, 1, 1, 1, SSD1306_INVERSE);    //eye
-
-  display.setCursor(62, 18);
-  display.println(F("AdaptaMaze"));
-
-  display.display();
-}
-
-void getParams() {
-
-}
 
 void optScreen() {
   // establish what wont change
@@ -217,8 +150,8 @@ void optScreen() {
   // if anything down, set the feedmode, otherwise count down
   while (iterator < 100) {
 
-    bool upvalL = digitalRead(leftBeam);
-    bool upvalR = digitalRead(rightBeam);
+    upvalL = digitalRead(leftBeam);
+    upvalR = digitalRead(rightBeam);
     if (upvalL == 1 && upvalR == 1) {
       display.drawFastHLine(iterator * 1.28, 30, 2, SSD1306_WHITE);
       display.display();
@@ -267,5 +200,152 @@ void optScreen() {
     }
     delay(100);
   }
+  iterator = 0;
+  display.clearDisplay();
+  display.setCursor(16, 0);
+  display.println("You Chose");
+
+  // update screen
+  if (taskMode == 1) {
+    display.setCursor(16, 8);
+    display.println("Linear Track");
+  }
+  if (taskMode == 2) {
+    display.setCursor(16, 8);
+    display.println("W-Maze Center");
+  }
+  if (taskMode == 3) {
+    display.setCursor(16, 8);
+    display.println("W-Maze Left");
+  }
+  if (taskMode == 4) {
+    display.setCursor(16, 8);
+    display.println("W-Maze Right");
+  }
+  if (taskMode == 5) {
+    display.setCursor(16, 8);
+    display.println("Social Task");
+  }
+  display.display();
+  delay(1000);
 
 }
+
+void saveScreen() {
+  // establish what wont change
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(16, 0);
+  display.println ("Want to");
+  display.setCursor(0, 8);
+  display.println("Save your data?");
+  display.setCursor(24, 16);
+  display.println("Yes");
+  display.setCursor(76, 16);
+  display.println("No");
+  display.display();
+  delay(300);
+  // if anything down, set the feedmode, otherwise count down
+  while (iterator < 100) {
+
+    bool upvalL = digitalRead(leftBeam);
+    bool upvalR = digitalRead(rightBeam);
+    if (upvalL == 1 && upvalR == 1) {
+      display.drawFastHLine(iterator * 1.28, 30, 2, SSD1306_WHITE);
+      display.display();
+      ++iterator;
+    }
+
+    else {
+      // first wipe the bottom screen
+      display.fillRect(0, 24, 128, 8, SSD1306_BLACK);
+      // wipe the two opt dots
+      display.fillCircle(20, 20, 2, SSD1306_BLACK);
+      display.fillCircle(90, 20, 2, SSD1306_BLACK);
+
+
+      if (upvalL == 0) {
+        iterator = 0;
+        ++saveOpt;
+        if (saveOpt > 2) {
+          saveOpt = 1;
+        }
+      }
+
+      if (upvalR == 0) {
+        iterator = 0;
+        --saveOpt;
+        if (saveOpt < 1) {
+          saveOpt = 2;
+        }
+      }
+
+      if (saveOpt == 1) {
+        display.fillCircle(20, 20, 2, SSD1306_WHITE);
+      }
+
+      if (saveOpt == 2) {
+        display.fillCircle(90, 20, 2, SSD1306_WHITE);
+      }
+    }
+    delay(200);
+  }
+  // done with the options loop,
+  iterator = 0;  // reset, its just a placeholder for the prog bar anyways
+  delay(400);
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  DateTime now = rtc.now();
+  if (saveOpt = 1) {
+    display.println(F("Will Save"));
+    display.setCursor(8, 8);
+    display.println(F("Naming file:"));
+    // need to add here the filename and file generator function
+  }
+  if (saveOpt == 2) {
+    display.println(F("Wont Save"));
+    display.setCursor(8, 8);
+    display.println(F("Today is: "));
+    display.setCursor(16, 16);
+    Serial.print(now.year(), DEC);
+    Serial.print(' / ');
+    Serial.print(now.month(), DEC);
+    Serial.print(' / ');
+    Serial.print(now.day(), DEC);
+  }
+  display.display();
+  delay(1000);
+}
+
+void displayElapsedTime() {
+  // this goes via millis as a counter, but i may try to double check it
+  // you can either use millis() to gather your clock tics
+  thistime = millis();
+  strcpy(mydateHMS, "__:__:__");  // placeholder filename
+  int thishour = (thistime - starttime) / 3600000;
+  int thisminute = ((thistime - starttime) - (thishour * 3600000)) / 60000;
+  int thissecond = ((thistime - starttime) - (thishour * 3600000) - (thisminute * 60000)) / 1000;
+
+  mydateHMS[0] = thishour / 10 + '0';
+  mydateHMS[1] = thishour % 10 + '0';
+
+  mydateHMS[3] = thisminute / 10 + '0';
+  mydateHMS[4] = thisminute % 10 + '0';
+
+  mydateHMS[6] = thissecond / 10 + '0';
+  mydateHMS[7] = thissecond % 10 + '0';
+  display.setCursor(0, 24);
+  display.fillRect(0, 24, 48, 8, SSD1306_BLACK);
+  display.print(F(mydateHMS));
+  display.display();
+
+
+}
+
+
+
+// or you can use the pcf8523 timer function to initiate a ~50 hz timer
+// this works by asigning the timer to 'tic' on an interrupt pin, and the
+// interrupt will save out those increments (with much higher accuracy)
+
+// either way, i think its not that big a deal because we're going to jitter by ~1 - 5 %

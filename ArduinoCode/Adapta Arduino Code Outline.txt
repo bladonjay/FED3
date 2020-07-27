@@ -1,0 +1,49 @@
+AdaptaTask
+*	Include the initLinear library
+o	Libraries
+?	Spi
+?	Sd
+?	Rtclib
+?	Adafruit gfx
+?	Adafruit ssd1306
+o	Define
+?	Screen width
+?	Screen height
+?	Oled reset
+o	Declare objects
+?	Adafruit display
+?	Rtc
+o	Declare functions
+?	RatsSplashScreen
+?	OptScreen
+?	StartScreen (one for each task)
+?	SaveScreen
+?	RunLinTrack
+?	RunWmazeCenter
+?	RunWmazeLeft
+?	RunWmazeRight
+?	RunSocial
+?	FeedRat
+?	displayDateTime
+*	setup
+o	In setup, assign pins
+o	Initialize serial if it exists
+o	Initialize display
+o	Initialize timer (just for the date)
+o	Run Splash Screen
+o	Run Options Screen
+o	Run Save question screen
+o	Run Startup screen for that chosen task
+o	Update the filename, or date at left
+*	Loop:
+o	Run the update screen for that task
+o	Update the clock and elapsed time
+
+?
+initLinear
+*	Include libraries;
+o	Spi
+o	Sd
+o	wire
+
+
