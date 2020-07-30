@@ -1,10 +1,7 @@
 // include the library first
 # include "initLinear.h"
 
-#if defined(ARDUINO_SAMD_ZERO) && defined(SERIAL_PORT_USBVIRTUAL)
-// Required for Serial on Zero based boards
-#define Serial SERIAL_PORT_USBVIRTUAL
-#endif
+
 
 void setup() {
   // set up our I/O pins
@@ -15,38 +12,42 @@ void setup() {
   pinMode(rightFeed, OUTPUT);
   pinMode(leftFeed, OUTPUT);
   pinMode(centerFeed, OUTPUT);
-  pinMode(ledPin, OUTPUT);
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
 
   // open serial port, or
   Serial.begin(9600);
-  while (!Serial && iterator < 100) {
-    ++iterator; // wait for serial port to connect. Needed for native USB port only
-  }
-  if (Serial) {
-    Serial.println(F("Serial debug started"));
+  delay(1000);
+  // serial isnt totally necessary here
+  while (!Serial && iterator<100) {
+    ++iterator;
+    delay(10); // wait for serial port to connect. Needed for native USB port only
   }
   iterator = 0;
+
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  while (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C) && iterator < 100) { // Address 0x3C for 128x32
-    ++iterator;
-    if (iterator == 100) {
-      Serial.println(F("SSD1306 allocation failed"));
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed, trying again"));
+    delay(1000);
+    while (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) {
     }
   }
 
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
-    abort();
+  delay(1000);
+  display.setRotation(2);
+
+
+  while (! rtc.begin()) {
   }
-  iterator = 0;
+
+  // Declare the RTC here
+
+
+  
   Serial.println("SSD1306 initialized");
   // initialize sd card at pin 10
   if (!SD.begin(chipSelect)) {
-    ++iterator;
-    if (iterator == 100) {
-      Serial.println(F("card initialization failed"));
-    }
+    ;
   }
   Serial.println("card initialized.");
   iterator = 0;
@@ -57,6 +58,7 @@ void setup() {
 
   // Clear the buffer, set text parameters
   display.clearDisplay();
+  display.setRotation(2);
   display.setTextSize(1);      // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE); // Draw white text
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
@@ -65,12 +67,12 @@ void setup() {
   delay(1000);
   // tone (BUZZER, 500, 500);
   // grab the date from our rtc.
-  DateTime now = rtc.now();
-  optScreen();
-  saveScreen();
-  makeFile();
-  starttime = millis();
-  startScreen();
+  //optScreen();
+  //saveScreen();
+  //makeFile();
+  //starttime = millis();
+  //startScreen();
+  //writeData();
 }
 
 void loop() {
@@ -92,11 +94,21 @@ void RunLinTrack() {
   }
   // check left beam, if its unbroken, turn off pin and open circle
   if (upvalL == 1) {
-    digitalWrite(ledPin, LOW);
+    digitalWrite(ledPin1, LOW);
     display.fillCircle(32, 12, 2, SSD1306_BLACK); // centerx centery rad, color
+    if (wasupL == 0) {
+      char thisevent[] = "Unpoke Left";
+      writeData();
+    }
+    wasupL = 1;
   }
   else {
     // if left beam broken, and last well wasnt this one, feed, reset
+    if (wasupL == 1) {
+      char thisevent[] = "Poke Left";
+      writeData();
+    }
+    // if down its broken
     if (lastWell != 1) {
       ++Lrew;
       // update display settings
@@ -104,27 +116,42 @@ void RunLinTrack() {
       display.setCursor(36, 16);
       String Lstr = String(Lrew);
       display.println(Lstr);
+      digitalWrite(ledPin1, HIGH);
+      char thisevent[] = "Fed Left";
+      writeData();
     }
-    lastWell = 1;
-    digitalWrite(ledPin, HIGH);
+    lastWell = 1; wasupL = 0;
+
     display.fillCircle(32, 12, 2, SSD1306_WHITE);
   }
 
   // if right beam broken
   if (upvalR == 1) {
-    digitalWrite(ledPin, LOW);
+    digitalWrite(ledPin2, LOW);
     display.fillCircle(94, 12, 2, SSD1306_BLACK); // centerx centery rad, color
+    if (wasupR == 0) {
+      char thisevent[] = "Unpoke Right";
+      writeData();
+    }
+    wasupL = 1;
   }
   else {
+    if (wasupR == 1) {
+      char thisevent[] = "Poke Right";
+      writeData();
+    }
     if (lastWell != 2) {
       ++Rrew;
       display.fillRect(93, 16, 18, 8, SSD1306_BLACK);
       display.setCursor(94, 16);
       String Rstr = String(Rrew);
       display.println(Rstr);
+      digitalWrite(ledPin2, HIGH);
+      char thisevent[] = "Fed Right";
+      writeData();
     }
-    lastWell = 2;
-    digitalWrite(ledPin, HIGH);
+    lastWell = 2; wasupR = 0;
+
     display.fillCircle(94, 12, 2, SSD1306_WHITE);
   }
   // draw outlines
@@ -243,6 +270,8 @@ void saveScreen() {
   display.println("Yes");
   display.setCursor(76, 16);
   display.println("No");
+  // start with no
+  display.fillCircle(90, 20, 2, SSD1306_WHITE);
   display.display();
   delay(300);
   // if anything down, set the feedmode, otherwise count down
@@ -266,25 +295,19 @@ void saveScreen() {
 
       if (upvalL == 0) {
         iterator = 0;
-        ++saveOpt;
-        if (saveOpt > 2) {
-          saveOpt = 1;
-        }
+        !saveOpt;
       }
 
       if (upvalR == 0) {
         iterator = 0;
-        --saveOpt;
-        if (saveOpt < 1) {
-          saveOpt = 2;
-        }
+        !saveOpt;
       }
-
-      if (saveOpt == 1) {
+      // if saveOpt is 1, we save
+      if (saveOpt == true) {
         display.fillCircle(20, 20, 2, SSD1306_WHITE);
       }
-
-      if (saveOpt == 2) {
+      // if saveOpt is false, we dont
+      if (saveOpt == false) {
         display.fillCircle(90, 20, 2, SSD1306_WHITE);
       }
     }
