@@ -63,7 +63,7 @@ int iterator = 0;
 
 // clock variables
 // Variables modified during an interrupt must be declared volatile
-volatile bool countdownInterruptTriggered = false;
+volatile bool clockgoing = false;
 volatile int numCountdownInterrupts = 0;
 const int timerInterruptPin = 5;  // Adafruit Feather M0/M4/nRF52840
 // you can also use millis, its just less precise
@@ -182,8 +182,10 @@ void loop() {
 // keep this timer function in this sketch
 void countdownOver () {
   // Set a flag to run code in the loop():
-  countdownInterruptTriggered = true;
+  if (clockgoing == true) {
   numCountdownInterrupts++;
+  }
+  clockgoing = true;
 }
 
 void gatherDate(){

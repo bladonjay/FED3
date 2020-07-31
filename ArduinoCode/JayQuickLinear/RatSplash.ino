@@ -71,7 +71,7 @@ void RunMouse() {
       display.drawFastHLine(i - 14, 20, 8, SSD1306_WHITE);
 
       display.fillRoundRect (i + 22, 30, 8, 4, 3, SSD1306_WHITE);  //front foot
-      display.fillRoundRect (i , 30, 8, 6, 3, SSD1306_INVERSE); //back foot
+      display.fillRoundRect (i , 30, 8, 6, 3, SSD1306_WHITE); //back foot
     }
     else {
       display.fillRoundRect (i + 2, 18, 30, 12, 10, SSD1306_WHITE);    //body
@@ -81,7 +81,7 @@ void RunMouse() {
       display.drawFastHLine(i - 12, 26, 8, SSD1306_WHITE);
 
       display.fillRoundRect (i + 15, 30, 8, 4, 3, SSD1306_WHITE);  //foot
-      display.fillRoundRect (i + 8, 30, 8, 6, 3, SSD1306_INVERSE); //back foot
+      display.fillRoundRect (i + 8, 30, 8, 6, 3, SSD1306_WHITE); //back foot
     }
     display.fillRoundRect (i + 22, 15, 8, 5, 3, SSD1306_INVERSE);    //ear
     display.display();
@@ -96,8 +96,8 @@ void RunMouse() {
   display.drawFastHLine(3, 27, 8, SSD1306_WHITE);
   display.drawFastHLine(3, 26, 8, SSD1306_WHITE);
 
-  display.fillRoundRect (30, 30, 8, 4, 3, SSD1306_INVERSE);  //foot
-  display.fillRoundRect (23, 30, 8, 6, 3, SSD1306_INVERSE);
+  display.fillRoundRect (30, 30, 8, 4, 3, SSD1306_WHITE);  //foot
+  display.fillRoundRect (23, 30, 8, 6, 3, SSD1306_WHITE);
 
   display.fillRoundRect (37, 15, 8, 5, 3, SSD1306_INVERSE);    //ear
   display.fillRoundRect (50, 19, 1, 1, 1, SSD1306_INVERSE);    //eye

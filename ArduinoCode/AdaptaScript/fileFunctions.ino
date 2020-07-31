@@ -10,7 +10,7 @@ void makeFile() {
     }
     display.setCursor(16, 24);
     display.println(filename);
-  
+
 
     logfile = SD.open(filename, FILE_WRITE);
     if ( ! logfile ) {
@@ -24,7 +24,7 @@ void makeFile() {
       display.display();
       logfile.println("AdaptaMaze File ");
       logfile.println("date in MM:DD:YYYY hh:mm:ss, Task Paradigm");
-      
+
       logfile.print(mydate); // from gatherdate
       logfile.print(", ");
       if (taskMode == 1) {
@@ -53,21 +53,23 @@ void makeFile() {
 }
 // write the timestamp, then the event
 void writeData() {
-  logfile = SD.open(filename, FILE_WRITE);
-  long thistime = numCountdownInterrupts; // 20 per second
-  strcpy(mydateHMS, "__:__:__.__");  // placeholder filename
-  int thishour = thistime / 60 / 60 / 20;
-  int thisminute = (thistime - (thishour * 60 * 60 * 20)) / 60 / 20;
-  int thissecond = (thistime - (thishour * 60 * 60 * 20) - (thisminute * 60 * 20));
-  mydateHMS[0] = thishour / 10 + '0';
-  mydateHMS[1] = thishour % 10 + '0';
-  mydateHMS[3] = thisminute / 10 + '0';
-  mydateHMS[4] = thisminute % 10 + '0';
-  mydateHMS[6] = thissecond / 20 + '0';
-  mydateHMS[7] = thissecond % 20 + '0';
-  mydateHMS[8] = thissecond / 2 + '0';
-  mydateHMS[9] = thissecond % 2 + '0';
-  logfile.print(mydateHMS);
-  logfile.print(",");
-  logfile.println(thisevent);
+  if (saveOut) {
+    logfile = SD.open(filename, FILE_WRITE);
+    long thistime = numCountdownInterrupts; // 20 per second
+    strcpy(mydateHMS, "__:__:__.__");  // placeholder filename
+    int thishour = thistime / 60 / 60 / 20;
+    int thisminute = (thistime - (thishour * 60 * 60 * 20)) / 60 / 20;
+    int thissecond = (thistime - (thishour * 60 * 60 * 20) - (thisminute * 60 * 20));
+    mydateHMS[0] = thishour / 10 + '0';
+    mydateHMS[1] = thishour % 10 + '0';
+    mydateHMS[3] = thisminute / 10 + '0';
+    mydateHMS[4] = thisminute % 10 + '0';
+    mydateHMS[6] = thissecond / 20 + '0';
+    mydateHMS[7] = thissecond % 20 + '0';
+    mydateHMS[8] = thissecond / 2 + '0';
+    mydateHMS[9] = thissecond % 2 + '0';
+    logfile.print(mydateHMS);
+    logfile.print(",");
+    logfile.println(thisevent);
+  }
 }
