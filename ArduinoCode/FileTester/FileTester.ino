@@ -4,27 +4,40 @@
 
 
 #include "RTClib.h"
+#include <RTCZero.h>
 #include <SPI.h>
-#include <SD.h>
-//#include "SdFat.h"
-//SdFat SD;             //Quick way to make SdFat work with standard SD.h sketches
+//#include <SD.h>
+#include <SdFat.h>
+SdFat SD;             //Quick way to make SdFat work with standard SD.h sketches
 
 // SD chip select pin.  Be sure to disable any other SPI devices such as Enet.
 const uint8_t chipSelect = 4;
 
+RTCZero rtc2;
 RTC_PCF8523 rtc;
+File logfile;
+
+void dateTime(uint16_t* date, uint16_t* time) {
+  DateTime now = rtc.now();
+  // return date using FAT_DATE macro to format fields
+  *date = FAT_DATE(now.year(), now.month(), now.day());
+
+  // return time using FAT_TIME macro to format fields
+  *time = FAT_TIME(now.hour(), now.minute(), now.second());
+}
+
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
+    delay(10); // wait for serial port to connect. Needed for native USB port only
   }
 
+  rtc.begin();
+
   Serial.print("Initializing SD card...");
-
   // see if the card is present and can be initialized:
-
   SdFile::dateTimeCallback(dateTime);
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
@@ -43,12 +56,14 @@ void setup() {
   
   File logfile;         // Create file object
   char filename[15];    // Array for file name data logged to named in setup
-  strcpy(filename, "________.CSV");  // placeholder filename
+  strcpy(filename, "FED_________.CSV");  // placeholder filename
   getFilename(filename);
   Serial.print("Testfile will be named: ");
   Serial.println(filename);
 
   Serial.println("now trying to create the file");
+    SdFile::dateTimeCallback(dateTime);
+
   logfile = SD.open(filename, FILE_WRITE);
   if ( ! logfile ) {
     Serial.println("SDfile creation failed");
@@ -64,20 +79,27 @@ void loop() {
 
 
 void getFilename(char *filename) {
-  // get the file name: Data_ mmddyyNN (nn if the file exists, add another)
+  // get the file name: FED (device num) _ mmddyyNN (nn if the file exists, add another)
   DateTime now = rtc.now();
+  //filename[3] = FED / 100 + '0';
+  //filename[4] = FED / 10 + '0';
+  //filename[5] = FED % 10 + '0';
   // 6 is an underscore
-  filename[0] = now.month() / 10 + '0';
-  filename[1] = now.month() % 10 + '0';
-  filename[2] = now.day() / 10 + '0';
-  filename[3] = now.day() % 10 + '0';
-  filename[4] = (now.year() - 2000) / 10 + '0';
-  filename[5] = (now.year() - 2000) % 10 + '0';
-
+  filename[7] = now.month() / 10 + '0';
+  filename[8] = now.month() % 10 + '0';
+  filename[9] = now.day() / 10 + '0';
+  filename[10] = now.day() % 10 + '0';
+  filename[11] = (now.year() - 2000) / 10 + '0';
+  filename[12] = (now.year() - 2000) % 10 + '0';
+  // apparently 13 is an underscore too
+  filename[16] = '.';
+  filename[17] = 'C';
+  filename[18] = 'S';
+  filename[19] = 'V';
   // check if htis filename exists, and if so increment last letters
   for (uint8_t i = 0; i < 100; i++) {
-    filename[6] = '0' + i / 10; // this is clever, increment the ascii char
-    filename[7] = '0' + i % 10;
+    filename[14] = '0' + i / 10; // this is clever, increment the ascii char
+    filename[15] = '0' + i % 10;
     if (! SD.exists(filename)) {
       break;
     }
@@ -97,7 +119,7 @@ void writeHeader() {
   logfile.println("MM:DD:YYYY hh:mm:ss, Device_Number, Battery_Voltage, Motor_Turns, FR_Ratio, Active_Poke, Left_Poke_Count, Right_Poke_Count, Pellet_Count, Retrieval_Time");
 
 }
-
+/*
 void WriteToSD() {
   DateTime now = rtc.now();
 
@@ -199,3 +221,4 @@ void WriteToSD() {
   logfile.flush();
   // logfile.close();
 }
+*/
