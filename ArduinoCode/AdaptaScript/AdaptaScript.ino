@@ -154,11 +154,11 @@ void setup() {
 
 
  
-  //
+  ///////////////////////////
   //
   // run startup sequence
   //
-  //
+  ///////////////////////////
 
   ratSplashScreen();
   optScreen(); // default is taskphase is 1
@@ -171,7 +171,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(timerInterruptPin), countdownOver, FALLING);
 }
 
-
+  ///////////////////////////
+  //
+  // loop
+  //
+  ///////////////////////////
 
 void loop() {
   // put your main code here, to run repeatedly:
