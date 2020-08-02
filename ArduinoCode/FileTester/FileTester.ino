@@ -52,11 +52,7 @@ void setup() {
   logfile = SD.open(filename, FILE_WRITE);
   if ( ! logfile ) {
     Serial.println("SDfile creation failed");
-  }
-  else {
-    Serial.println("Success!?");
-    logfile.close();
-  }
+  
 }
 
 void loop() {
