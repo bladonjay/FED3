@@ -33,6 +33,7 @@ void writeData();
 bool upvalL;
 bool upvalR;
 bool upvalC;
+
 bool wasupL = false;
 bool wasupC = false;
 bool wasupR = false;
@@ -44,7 +45,7 @@ const int centerBeam = 6;
 
 const int rightFeed = 2;
 const int leftFeed = 3;
-const int centerFeed = 5;
+const int centerFeed = 15;
 
 const int ledPin1 = 13;
 const int ledPin2 = 8;
@@ -52,12 +53,13 @@ const int BUZZER = 0; // this is pin a0 for the buzzer (unnecessary)
 
 
 int lastWell = 0;
+int twoBack = 0;
 int Lrew = 0;
 int Rrew = 0;
+int Crew = 0;
 int taskMode = 1;
-int iterator = 0;
-
-
+unsigned int iterator = 0; // this is going to be our interval counter
+float holdTime = 0.5;
 
 
 
@@ -73,8 +75,8 @@ const int timerInterruptPin = 5;  // Adafruit Feather M0/M4/nRF52840
 // file variables
 const int chipSelect = 4; // on this board its 4, could be 10
 File logfile;
-char filename[10] = ________.dat;
-char mydate[17];
+char filename[14] = "________.csv";
+char mydatetime[17];
 char mydateHMS[8];
 char thisevent[] = "Task Start";
 //////////////////////////
@@ -123,9 +125,11 @@ void setup() {
   while (! rtc.begin()) {
   }
   rtc.deconfigureAllTimers();
-  rtc.start();
+ 
   gatherDate(); // gather date now, when the rtc is set (filename set and date set)
-
+  rtc.start();
+  
+  
   // initialize sd card
   Serial.println("SSD1306 initialized");
   if (!SD.begin(chipSelect)) {
@@ -160,14 +164,15 @@ void setup() {
   //
   ///////////////////////////
 
-  ratSplashScreen();
-  optScreen(); // default is taskphase is 1
+  //ratSplashScreen();
+  //optScreen(); // default is taskphase is 1
   delay(1000);
-  saveScreen(); // default is not to save
+  //saveScreen(); // default is not to save
   delay(1000);
   startScreen();
   // last thing to do before running task is to initialize timer
   rtc.enableCountdownTimer(PCF8523_Frequency4kHz, 205); // start high at 50 msec (or 20 hz)
+  // basically whenever this pin changes itll keep track
   attachInterrupt(digitalPinToInterrupt(timerInterruptPin), countdownOver, FALLING);
 }
 
@@ -179,16 +184,19 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
-  // elapsedTime();
+  if (taskMode == 1){
+    RunLinTrack();
+  }
+  showElapsedTime();
 }
 
 // keep this timer function in this sketch
 void countdownOver () {
   // Set a flag to run code in the loop():
   if (clockgoing == true) {
-  numCountdownInterrupts++;
+    ++numCountdownInterrupts;
   }
+  // first tick doesnt count
   clockgoing = true;
 }
 
@@ -196,23 +204,23 @@ void gatherDate(){
  // gather the date and save it
   DateTime now = rtc.now();
   // fill the date and time
-  mydate[0] = now.month() / 10 + '0';
-  mydate[1] = now.month() % 10 + '0';
-  mydate[2] = '/';
-  mydate[3] = now.day() / 10 + '0';
-  mydate[4] = now.day() % 10 + '0';
-  mydate[5] = '/';
-  mydate[6] = (now.year() - 2000) / 10 + '0';
-  mydate[7] = (now.year() - 2000) % 10 + '0';
-  mydate[8] =' ';
-  mydate[9] = now.hour() / 10 + '0';
-  mydate[10] = now.hour() % 10 + '0';
-  mydate[11] =':';
-  mydate[12] = now.minute() / 10 + '0';
-  mydate[13] = now.minute() % 10 + '0';
-  mydate[14] =':';
-  mydate[15] = now.second() / 10 + '0';
-  mydate[16] = now.second() % 10 + '0';
+  mydatetime[0] = now.month() / 10 + '0';
+  mydatetime[1] = now.month() % 10 + '0';
+  mydatetime[2] = '/';
+  mydatetime[3] = now.day() / 10 + '0';
+  mydatetime[4] = now.day() % 10 + '0';
+  mydatetime[5] = '/';
+  mydatetime[6] = (now.year() - 2000) / 10 + '0';
+  mydatetime[7] = (now.year() - 2000) % 10 + '0';
+  mydatetime[8] =' ';
+  mydatetime[9] = now.hour() / 10 + '0';
+  mydatetime[10] = now.hour() % 10 + '0';
+  mydatetime[11] =':';
+  mydatetime[12] = now.minute() / 10 + '0';
+  mydatetime[13] = now.minute() % 10 + '0';
+  mydatetime[14] =':';
+  mydatetime[15] = now.second() / 10 + '0';
+  mydatetime[16] = now.second() % 10 + '0';
 
   filename[0] = now.month() / 10 + '0';
   filename[1] = now.month() % 10 + '0';

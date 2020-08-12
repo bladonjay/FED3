@@ -25,7 +25,7 @@ void makeFile() {
       logfile.println("AdaptaMaze File ");
       logfile.println("date in MM:DD:YYYY hh:mm:ss, Task Paradigm");
 
-      logfile.print(mydate); // from gatherdate
+      logfile.print(mydatetime); // from gatherdate
       logfile.print(", ");
       if (taskMode == 1) {
         logfile.println("Linear Track");
@@ -52,8 +52,8 @@ void makeFile() {
   }
 }
 // write the timestamp, then the event
-void writeData() {
-  if (saveOut) {
+void writeData(char *thisevent) {
+  if (saveOpt) {
     logfile = SD.open(filename, FILE_WRITE);
     long thistime = numCountdownInterrupts; // 20 per second
     strcpy(mydateHMS, "__:__:__.__");  // placeholder filename

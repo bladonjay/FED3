@@ -317,3 +317,24 @@ void ratSplashScreen() {
   display.display();
   delay(2000);
 }
+
+void showElapsedTime() {
+  int elapsed = numCountdownInterrupts *50;  // convert to msec
+  display.fillRect(0, SCREEN_HEIGHT - 8, 48, 8, SSD1306_BLACK);
+  display.setCursor(0, SCREEN_HEIGHT - 8);
+  int elapsedhour = elapsed / 60 / 60 / 1000;
+  int elapsedminute = (elapsed - (elapsedhour * 60 * 60 * 1000)) / 60 / 1000;
+  int elapsedsecond = (elapsed - (elapsedhour * 60 * 60 * 1000) - (elapsedminute * 60 * 1000)) / 1000;
+  String elapsedTime = "__:__:__.__";
+  elapsedTime[0] = elapsedhour / 10 + '0';
+  elapsedTime[1] = elapsedhour % 10 + '0';
+  elapsedTime[3] = elapsedminute / 10 + '0';
+  elapsedTime[4] = elapsedminute % 10 + '0';
+  elapsedTime[6] = elapsedsecond / 1000 + '0';
+  elapsedTime[7] = elapsedsecond % 1000 + '0';
+  elapsedTime[9] = elapsedsecond / 100 + '0';
+  elapsedTime[10] = elapsedsecond / 10 + '0';
+
+  display.print(elapsedTime);
+  display.display();
+}
