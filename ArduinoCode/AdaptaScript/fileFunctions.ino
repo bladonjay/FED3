@@ -18,6 +18,7 @@ void makeFile() {
       display.setCursor(0, 36);
       display.println("SD card Fail, Wont Save");
       display.display();
+      delay(1000);
     }
     else {
       display.setCursor(0, 36);
@@ -44,32 +45,23 @@ void makeFile() {
       }
       display.setCursor(0, 48);
       logfile.println("\n");
-      logfile.println("Time, Event");
+      logfile.println("Time (mSec), Event");
       display.println("File Created With Headers!");
       display.display();
       logfile.close();
+      delay(1000);
     }
   }
 }
 // write the timestamp, then the event
-void writeData() {
-  if (saveOut) {
+void writeData(char *thisevent) {
+  // gather the elapsed time
+  elapsedTime();
+  if (saveOpt == true) {
     logfile = SD.open(filename, FILE_WRITE);
-    long thistime = numCountdownInterrupts; // 20 per second
-    strcpy(mydateHMS, "__:__:__.__");  // placeholder filename
-    int thishour = thistime / 60 / 60 / 20;
-    int thisminute = (thistime - (thishour * 60 * 60 * 20)) / 60 / 20;
-    int thissecond = (thistime - (thishour * 60 * 60 * 20) - (thisminute * 60 * 20));
-    mydateHMS[0] = thishour / 10 + '0';
-    mydateHMS[1] = thishour % 10 + '0';
-    mydateHMS[3] = thisminute / 10 + '0';
-    mydateHMS[4] = thisminute % 10 + '0';
-    mydateHMS[6] = thissecond / 20 + '0';
-    mydateHMS[7] = thissecond % 20 + '0';
-    mydateHMS[8] = thissecond / 2 + '0';
-    mydateHMS[9] = thissecond % 2 + '0';
-    logfile.print(mydateHMS);
+    logfile.print(thisTime);
     logfile.print(",");
     logfile.println(thisevent);
+    logfile.close();
   }
 }

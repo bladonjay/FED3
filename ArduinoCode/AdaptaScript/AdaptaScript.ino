@@ -26,7 +26,17 @@ void optScreen();
 void saveScreen();
 void startScreen();
 
-void makeFile();
+
+void finishScreen();
+
+void runLinTrack();
+void runWMaze();
+
+void countdownOver(); // the ticker for the timer
+void updateDateTime(); // update time ticker
+void gatherDate(); // gather the date once
+
+void makeFile(); // make this file
 void writeData();
 
 //
@@ -36,6 +46,7 @@ bool upvalC;
 bool wasupL = false;
 bool wasupC = false;
 bool wasupR = false;
+
 bool saveOpt = false;
 
 const int rightBeam = 11;
@@ -52,12 +63,21 @@ const int BUZZER = 0; // this is pin a0 for the buzzer (unnecessary)
 
 
 int lastWell = 0;
+int lastSideWell = 0;
+
 int Lrew = 0;
 int Rrew = 0;
+int Crew = 0;
+int Lhit = 0;
+int Rhit = 0;
+int Chit = 0;
+
 int taskMode = 1;
 int iterator = 0;
 
-
+float breakTime;
+unsigned long thisTime;
+float holdTime = 1000; // in msec, so you can do bits less than 1
 
 
 
@@ -73,10 +93,11 @@ const int timerInterruptPin = 5;  // Adafruit Feather M0/M4/nRF52840
 // file variables
 const int chipSelect = 4; // on this board its 4, could be 10
 File logfile;
-char filename[10] = ________.dat;
+char filename[] = "________.csv";
 char mydate[17];
-char mydateHMS[8];
+char elapsedHMS[8];
 char thisevent[] = "Task Start";
+
 //////////////////////////
 //                      //
 //                      //
@@ -99,6 +120,9 @@ void setup() {
   pinMode(ledPin1, OUTPUT);
   pinMode(ledPin2, OUTPUT);
 
+  pinMode(timerInterruptPin, INPUT_PULLUP);
+
+  
   // open serial port, or
   Serial.begin(9600);
   delay(1000);
@@ -122,9 +146,6 @@ void setup() {
   // Start the timer, redo all the small timers, get the time
   while (! rtc.begin()) {
   }
-  rtc.deconfigureAllTimers();
-  rtc.start();
-  gatherDate(); // gather date now, when the rtc is set (filename set and date set)
 
   // initialize sd card
   Serial.println("SSD1306 initialized");
@@ -151,41 +172,70 @@ void setup() {
   display.setRotation(2);
   display.clearDisplay();
 
-
-
- 
   //
   //
   // run startup sequence
   //
   //
-
+  display.clearDisplay();
+  //resetVars(); dont need to because they're declared
+  gatherDate(); // gather date now, when the rtc is set (filename set and date set)
   ratSplashScreen();
   optScreen(); // default is taskphase is 1
   delay(1000);
-  saveScreen(); // default is not to save
-  delay(1000);
-  startScreen();
-  // last thing to do before running task is to initialize timer
-  rtc.enableCountdownTimer(PCF8523_Frequency4kHz, 205); // start high at 50 msec (or 20 hz)
-  attachInterrupt(digitalPinToInterrupt(timerInterruptPin), countdownOver, FALLING);
-}
-
-
-
-void loop() {
-  // put your main code here, to run repeatedly:
   
-  // elapsedTime();
+  saveScreen(); // default is not to save
+  delay(1000);  
+  
+  // last thing to do before running task is to initialize timer
+  rtc.deconfigureAllTimers();
+  delay(100);
+  rtc.enableCountdownTimer(PCF8523_Frequency4kHz, 205); // start high at 50 msec (or 20 hz)
+  startScreen();
 }
+
+// have to have a loop function even though you dont use it
+void loop() {
+  
+}
+
+
+
+
+
+//////////////////////////////////////
+////// timer functions
+//////////////////////////////////////
+
+
 
 // keep this timer function in this sketch
 void countdownOver () {
-  // Set a flag to run code in the loop():
+  
   if (clockgoing == true) {
   numCountdownInterrupts++;
   }
   clockgoing = true;
+}
+
+
+void elapsedTime() {
+  thisTime = numCountdownInterrupts*50; // 20 per second, every 50 msec, this is every msec
+  strcpy(elapsedHMS, "__:__:__");  // placeholder filename
+  int thishour = thisTime / 60 / 60 /1000;
+  int thisminute = (thisTime - (thishour * 60 * 60 * 1000)) / 60 / 1000;
+  int thisMSecond = (thisTime - (thishour * 60 * 60 * 1000) - (thisminute * 60 * 1000));
+  elapsedHMS[0] = thishour / 10 + '0';
+  elapsedHMS[1] = thishour % 10 + '0';
+  elapsedHMS[3] = thisminute / 10 + '0';
+  elapsedHMS[4] = thisminute % 10 + '0';
+  elapsedHMS[6] = thisMSecond / 10000 + '0';
+  elapsedHMS[7] = thisMSecond/1000 % 10 + '0';
+  display.fillRect(0,SCREEN_HEIGHT-8,48,8,SSD1306_BLACK);
+  display.setCursor(0,SCREEN_HEIGHT-8);
+  display.print(F(elapsedHMS));
+  display.display();
+  
 }
 
 void gatherDate(){
